@@ -11,7 +11,7 @@ was already free.
 One file, no dependencies, thirteen numbers you can read. There is also an
 interactive calculator for people who do not write code.
 
-**[Open the calculator](https://heath-brain.github.io/aleague-xg/)**
+**[Open the calculator](https://heath-b.github.io/aleague-xg/)**
 
 ---
 
