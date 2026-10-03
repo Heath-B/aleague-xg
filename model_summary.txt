@@ -1,0 +1,41 @@
+xG-lite, pre-shot expected goals, A-League Men 2023/24 to 2025/26
+====================================================================
+Shots: 14065   Goals: 1463 (10.40%)
+Regular seasons only. Penalties and shootouts excluded. 'regular' play is the baseline situation.
+
+term                           coef      se       z        p    odds
+--------------------------------------------------------------------
+intercept                    -2.736   1.083   -2.52     .012    0.06
+log_distance                  0.072   0.532    0.14     .892    1.08
+distance                     -0.063   0.028   -2.22     .026    0.94
+angle                         1.722   0.495    3.48    <.001    5.60
+angle_x_logdist               0.521   0.203    2.57     .010    1.68
+is_header                    -0.888   0.091   -9.80    <.001    0.41
+sit_assisted                  0.055   0.087    0.63     .525    1.06
+sit_corner                   -0.742   0.120   -6.20    <.001    0.48
+sit_fast-break                0.603   0.119    5.07    <.001    1.83
+sit_free-kick                 0.512   0.245    2.09     .037    1.67
+sit_set-piece                -0.332   0.158   -2.09     .036    0.72
+sit_throw-in-set-piece       -0.690   0.264   -2.62     .009    0.50
+
+Fit
+  log loss, null model      0.33382
+  log loss, in sample       0.28669
+  log loss, cross-validated 0.28786
+  pseudo R2 (McFadden, CV)  0.1377
+  Brier, cross-validated    0.08165
+  total xG 1463.1 against 1463 actual goals
+
+Calibration, cross-validated predictions in deciles
+ bin      n   mean xG   actual   xG sum  goals
+----------------------------------------------
+   1   1407    0.0212   0.0270     29.8     38
+   2   1407    0.0338   0.0291     47.6     41
+   3   1407    0.0428   0.0398     60.2     56
+   4   1407    0.0523   0.0441     73.6     62
+   5   1407    0.0635   0.0462     89.4     65
+   6   1406    0.0759   0.0811    106.7    114
+   7   1406    0.0935   0.1046    131.5    147
+   8   1406    0.1199   0.1238    168.5    174
+   9   1406    0.1676   0.1814    235.7    255
+  10   1406    0.3699   0.3634    520.0    511

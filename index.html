@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="A free expected goals model for the A-League Men. Click anywhere on the pitch to see how likely a shot from that spot is to be scored.">
+<title>A-League xG Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+/* Layout: pitch plan on the left, controls and readout on the right, stacking to one column on a phone. */
+:root{
+  --ground:#eef0f2;
+  --panel:#ffffff;
+  --ink:#1c2227;
+  --ink-soft:#5b6670;
+  --rule:#d2d8dd;
+  --accent:#2f5d7c;      /* steel blue, the attacking colour from the figures */
+  --accent-soft:#dce6ed;
+  --warm:#b4542f;        /* the conceded red, used only for the header comparison */
+  --turf:#e4e8e6;
+  --turf-line:#aab4b0;
+  --warm-soft:#f6e7e0;
+
+  --display:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#14181b; --panel:#1c2126; --ink:#e7ebee; --ink-soft:#97a2ab;
+    --rule:#2e363d; --accent:#7fb0d1; --accent-soft:#23323e; --warm:#d9906c; --warm-soft:#3a2a22;
+    --turf:#1f2529; --turf-line:#3d474e;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#14181b; --panel:#1c2126; --ink:#e7ebee; --ink-soft:#97a2ab;
+  --rule:#2e363d; --accent:#7fb0d1; --accent-soft:#23323e; --warm:#d9906c; --warm-soft:#3a2a22;
+  --turf:#1f2529; --turf-line:#3d474e;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--ground); color:var(--ink);
+  font-family:var(--body); font-size:15px; line-height:1.5;
+  padding-inline:16px; padding-block:28px 48px;
+}
+.wrap{max-width:1040px; margin:0 auto; display:flex; flex-direction:column; gap:22px}
+
+header h1{
+  font-family:var(--display); font-weight:600;
+  font-size:clamp(1.6rem,4vw,2.3rem); line-height:1.15; margin:0;
+  text-wrap:balance; letter-spacing:-.01em;
+}
+header p{margin:.45rem 0 0; color:var(--ink-soft); max-width:62ch}
+
+.main{display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); gap:22px; align-items:start}
+@media (max-width:760px){.main{grid-template-columns:1fr}}
+
+.card{background:var(--panel); border:1px solid var(--rule); border-radius:10px; padding:18px}
+.card h2{
+  font-family:var(--body); font-size:.72rem; font-weight:600;
+  letter-spacing:.09em; text-transform:uppercase; color:var(--ink-soft);
+  margin:0 0 12px;
+}
+
+/* pitch */
+#pitch{display:block; width:100%; height:auto; max-width:100%; cursor:crosshair; touch-action:manipulation}
+.hint{margin:10px 0 0; font-size:.82rem; color:var(--ink-soft)}
+
+/* controls */
+.group{margin-bottom:16px}
+.group:last-child{margin-bottom:0}
+.group > label{display:block; font-size:.72rem; font-weight:600; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--ink-soft); margin-bottom:7px}
+.seg{display:flex; gap:6px}
+.seg button{
+  flex:1; min-width:0; font-family:var(--body); font-size:.9rem; font-weight:500;
+  padding:9px 6px; border:1px solid var(--rule); border-radius:7px;
+  background:transparent; color:var(--ink); cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--panel)}
+select{
+  width:100%; font-family:var(--body); font-size:.9rem; padding:9px 10px;
+  border:1px solid var(--rule); border-radius:7px; background:var(--panel); color:var(--ink);
+}
+button:focus-visible, select:focus-visible, #pitch:focus-visible{
+  outline:2px solid var(--accent); outline-offset:2px;
+}
+
+/* readout */
+.readout{text-align:center; padding:4px 0 2px}
+.xg{
+  font-family:var(--display); font-weight:600; font-variant-numeric:tabular-nums;
+  font-size:clamp(3.2rem,11vw,4.4rem); line-height:1; letter-spacing:-.02em;
+  color:var(--accent); margin:0;
+}
+.xg-label{font-size:.72rem; font-weight:600; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--ink-soft); margin:6px 0 0}
+.odds{margin:12px 0 0; font-size:.95rem; color:var(--ink)}
+
+.facts{list-style:none; margin:16px 0 0; padding:14px 0 0; border-top:1px solid var(--rule);
+  display:grid; gap:7px}
+.facts li{display:flex; justify-content:space-between; gap:12px; font-size:.88rem}
+.facts span:first-child{color:var(--ink-soft)}
+.facts span:last-child{font-family:var(--mono); font-variant-numeric:tabular-nums}
+
+.compare{margin:14px 0 0; padding:11px 12px; background:var(--accent-soft);
+  border-radius:7px; font-size:.86rem; line-height:1.45}
+.compare b{color:var(--warm); font-variant-numeric:tabular-nums}
+
+.warn{
+  margin:12px 0 0; padding:10px 12px; border-radius:7px; font-size:.85rem;
+  line-height:1.45; background:var(--warm-soft); color:var(--ink);
+  border-left:3px solid var(--warm);
+}
+.warn b{color:var(--warm)}
+.warn[hidden]{display:none}
+footer{border-top:1px solid var(--rule); padding-top:18px; color:var(--ink-soft); font-size:.85rem}
+footer p{margin:0 0 9px; max-width:74ch}
+footer p:last-child{margin-bottom:0}
+footer code{font-family:var(--mono); font-size:.92em}
+@media (prefers-reduced-motion: reduce){*{transition:none!important; animation:none!important}}
+</style>
+<style>
+  html{color-scheme:light}
+  @media (prefers-color-scheme: dark){html:not([data-theme="light"]){color-scheme:dark}}
+  body{margin:0}
+  img{max-width:100%}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>A-League xG Calculator</h1>
+    <p>Click anywhere on the pitch to see how likely a shot from that spot is to be scored. Built on 14,065 shots from the 2023/24 to 2025/26 A-League Men regular seasons. Choose <b>Any</b> if you do not know how the shot was struck or what created it.</p>
+  </header>
+
+  <div class="main">
+    <div class="card">
+      <h2>Attacking third</h2>
+      <!-- Drawn to real dimensions in metres. Goal 7.32 wide, six-yard box 5.5 deep,
+           penalty area 16.5 deep and 40.32 wide, spot at 11 m, arc radius 9.15. -->
+      <svg id="pitch" viewBox="-34 0 68 44" role="img" aria-label="Plan of the attacking third. Click to place a shot." tabindex="0">
+        <rect x="-34" y="0" width="68" height="44" fill="var(--turf)"/>
+        <g fill="none" stroke="var(--turf-line)" stroke-width="0.25">
+          <line x1="-34" y1="2" x2="34" y2="2"/>
+          <rect x="-20.16" y="2" width="40.32" height="16.5"/>
+          <rect x="-9.16" y="2" width="18.32" height="5.5"/>
+          <path d="M -7.47 18.5 A 9.15 9.15 0 0 0 7.47 18.5"/>
+        </g>
+        <circle cx="0" cy="13" r="0.35" fill="var(--turf-line)"/>
+        <line x1="-3.66" y1="2" x2="3.66" y2="2" stroke="var(--ink)" stroke-width="0.6" stroke-linecap="round"/>
+        <g id="marker" style="display:none">
+          <line id="sight-l" x1="0" y1="0" x2="-3.66" y2="2" stroke="var(--accent)" stroke-width="0.18" opacity="0.55"/>
+          <line id="sight-r" x1="0" y1="0" x2="3.66" y2="2" stroke="var(--accent)" stroke-width="0.18" opacity="0.55"/>
+          <circle id="dot" cx="0" cy="0" r="1.15" fill="var(--accent)" stroke="var(--panel)" stroke-width="0.35"/>
+        </g>
+      </svg>
+      <p class="hint">Tap or click to move the shot. The faint lines show the angle the goal subtends from there, which is what most of the model turns on.</p>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>The shot</h2>
+        <div class="group">
+          <label id="bp-label">Struck with</label>
+          <div class="seg" role="group" aria-labelledby="bp-label">
+            <button type="button" id="bp-foot" aria-pressed="true">Foot</button>
+            <button type="button" id="bp-head" aria-pressed="false">Head</button>
+            <button type="button" id="bp-any" aria-pressed="false">Any</button>
+          </div>
+        </div>
+        <div class="group">
+          <label for="situation">Phase of play</label>
+          <select id="situation">
+            <option value="regular" selected>Open play</option>
+            <option value="assisted">Open play, assisted</option>
+            <option value="fast_break">Counter-attack</option>
+            <option value="corner">From a corner</option>
+            <option value="set_piece">Other set piece</option>
+            <option value="free_kick">Direct free kick</option>
+            <option value="throw_in_set_piece">From a throw-in</option>
+            <option value="any">Any phase, league mix</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <h2>Expected goals</h2>
+        <div class="readout">
+          <p class="xg" id="xg-value">0.21</p>
+          <p class="xg-label">xG</p>
+          <p class="odds" id="odds">Scored about <b>1 in 5</b> times</p>
+        </div>
+        <p class="warn" id="range-warn" hidden></p>
+        <ul class="facts">
+          <li><span>Distance to goal</span><span id="f-dist">11.0 m</span></li>
+          <li><span>Out from goal line</span><span id="f-out">11.0 m</span></li>
+          <li><span>Off centre</span><span id="f-off">0.0 m</span></li>
+          <li><span>Angle on goal</span><span id="f-angle">37&deg;</span></li>
+        </ul>
+        <p class="compare" id="compare"></p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p><b>What this is.</b> A logistic regression trained on every shot from three A-League Men regular seasons, 14,065 of them, of which 1,463 were goals. It uses distance, the angle the goal subtends, whether the shot was a header, and the phase of play. Nothing else.</p>
+    <p><b>What it cannot see.</b> Where the defenders and the goalkeeper were, how much pressure the shooter was under, and what happened in the seconds before the shot. That is why no public xG model explains more than a fraction of what decides a goal, and this one is no exception.</p>
+    <p><b>What "any" does.</b> It averages the model over the body parts and phases of play actually seen around that spot, so close to goal it leans towards headers from corners and further out towards foot shots in open play. It answers what a shot from there is worth on average, which is a different question from what one particular shot is worth. Use a specific body part and phase when you know them.</p>
+    <p><b>Where it stops being evidence.</b> Almost every header in the sample was taken inside 16 metres, and shots of any kind thin out past 35. Beyond those the page says so, because what you are reading there is the fitted curve continuing rather than anything that happened. One known weakness sits inside that range too. The header penalty is currently a fixed amount wherever the shot is taken, while the data shows headers falling away faster than foot shots as distance grows, so mid-range headers read a little high. That is being fixed in the next version.</p>
+    <p><b>Penalties are not covered.</b> They were excluded from training, because a fixed situation taken from one spot would distort everything around it.</p>
+    <p>Model version 1.0, free to use. Built by Heath Brain from Sofascore's public match feed.</p>
+  </footer>
+</div>
+
+<script>
+// Coefficients from make_xg_model.py, A-League Men 2023/24 to 2025/26.
+const B = {
+  intercept:       -2.7357013388210047,
+  log_distance:     0.07238694092396257,
+  distance:        -0.06311071862659293,
+  angle:            1.7218888931335286,
+  angle_x_logdist:  0.5208011785010307,
+  is_header:       -0.8877564681599229
+};
+const SITUATION = {
+  regular: 0,
+  assisted: 0.05518385548497039,
+  corner: -0.7417340238559987,
+  fast_break: 0.6030755805660073,
+  free_kick: 0.5116518081041089,
+  set_piece: -0.33174497269662423,
+  throw_in_set_piece: -0.6904611161615137
+};
+// Mix of body part and phase of play observed by area of the pitch, from
+// make_xg_mix.py. Used only when "Any" is chosen. Rows run through the
+// distance bands, and within each one through the sideways bands. Values are
+// interpolated between band centres so the answer moves smoothly.
+const MIX_KEYS = [["foot","regular"],["foot","assisted"],["foot","corner"],["foot","fast_break"],["foot","free_kick"],["foot","set_piece"],["foot","throw_in_set_piece"],["head","regular"],["head","assisted"],["head","corner"],["head","fast_break"],["head","free_kick"],["head","set_piece"],["head","throw_in_set_piece"]];
+const MIX_D = [4.581, 7.12, 9.018, 10.96, 13.06, 15.033, 16.913, 19.476, 23.072, 27.312, 34.886];
+const MIX_L = [2.354, 7.967, 13.826];
+const MIX = [
+  [0.134537,0.197435,0.136659,0.030818,0.000435,0.03317,0.016606,0.026875,0.099063,0.262986,0.003001,0,0.049425,0.00899],
+  [0.139521,0.196348,0.135796,0.02997,0.000423,0.032258,0.017597,0.026136,0.10068,0.261544,0.002918,0,0.048066,0.008743],
+  [0.139521,0.196348,0.135796,0.02997,0.000423,0.032258,0.017597,0.026136,0.10068,0.261544,0.002918,0,0.048066,0.008743],
+  [0.094156,0.182557,0.072957,0.034267,0.000535,0.028004,0.011281,0.033076,0.208004,0.26507,0.001861,0,0.058999,0.009233],
+  [0.128424,0.21256,0.082248,0.024933,0.001276,0.036201,0.005062,0.013361,0.116027,0.326323,0.004438,0,0.040233,0.008914],
+  [0.103803,0.187812,0.075601,0.030993,0.000382,0.030445,0.009359,0.027529,0.182445,0.285917,0.002636,0,0.053874,0.009204],
+  [0.072289,0.237861,0.067592,0.036663,0.0003,0.019805,0.005297,0.013408,0.219271,0.233807,0.009257,0,0.069007,0.015443],
+  [0.09238,0.278459,0.087749,0.049146,0.000859,0.030265,0.009292,0.006058,0.110501,0.290377,0.002989,0,0.038863,0.003062],
+  [0.077001,0.246684,0.072726,0.039655,0.000224,0.022462,0.006257,0.011549,0.192155,0.249791,0.007681,0,0.061513,0.012302],
+  [0.073907,0.292635,0.069977,0.040778,0.000446,0.017237,0.009403,0.015358,0.216138,0.176684,0.007659,0,0.067501,0.012277],
+  [0.130638,0.425728,0.065571,0.063391,0.000566,0.014128,0.006123,0.003992,0.094128,0.13707,3.2e-05,0,0.043049,0.015584],
+  [0.098236,0.354157,0.066527,0.052076,0.000247,0.019654,0.007729,0.010177,0.159975,0.157576,0.004233,0,0.055876,0.013537],
+  [0.108433,0.404452,0.066213,0.075753,0.000572,0.024051,0.027709,0.011859,0.142016,0.077746,0.003946,0,0.053255,0.003995],
+  [0.136782,0.488376,0.062196,0.113437,0.000537,0.028107,0.020513,0.003786,0.041489,0.065677,0.001868,0,0.03348,0.003752],
+  [0.121575,0.644384,0.047056,0.089519,0.001398,0.05402,0.010331,0.000286,0.017082,0.013053,7.8e-05,0,0.001021,0.000197],
+  [0.167377,0.476868,0.093463,0.082829,0.000507,0.04217,0.019374,0.005312,0.047865,0.032514,0.001765,0,0.024676,0.00528],
+  [0.129116,0.567612,0.086431,0.120293,0.000452,0.017477,0.014178,0.00164,0.022555,0.021251,2.5e-05,0,0.011166,0.007804],
+  [0.114752,0.632241,0.046084,0.146536,0.000755,0.018837,0.013331,0.002738,0.011809,0.007049,4.2e-05,0,0.005719,0.000107],
+  [0.212071,0.520657,0.093093,0.055885,0.000977,0.044448,0.027288,0.003544,0.015285,0.012468,5.5e-05,0,0.014091,0.000138],
+  [0.161022,0.547637,0.069179,0.148088,0.000564,0.023726,0.025404,0.003976,0.008823,0.003336,3.2e-05,0,0.006203,0.00201],
+  [0.147994,0.660291,0.05082,0.110255,0.000623,0.015544,0.004604,0.000127,0.003348,0.001552,3.5e-05,0,0.004719,8.8e-05],
+  [0.217764,0.52722,0.083732,0.07244,0.02265,0.049588,0.020855,9.5e-05,0.002488,0.001154,2.6e-05,0,0.001923,6.5e-05],
+  [0.183726,0.557225,0.09095,0.105456,0.010598,0.027877,0.015208,0.000147,0.003877,0.001798,4e-05,0,0.002996,0.000102],
+  [0.117135,0.635506,0.067388,0.12764,0.00042,0.030633,0.016056,8.6e-05,0.002259,0.001048,2.4e-05,0,0.001746,5.9e-05],
+  [0.180722,0.562886,0.129023,0.043223,0.040115,0.022566,0.0157,0.002324,0.00125,0.001597,3.6e-05,0,0.000468,9e-05],
+  [0.160739,0.570508,0.111533,0.053942,0.041227,0.039713,0.018367,0.001601,0.000861,0.0011,2.5e-05,0,0.000322,6.2e-05],
+  [0.151815,0.596541,0.080638,0.073219,0.040094,0.022104,0.029063,0.000107,0.002824,0.003108,2.9e-05,0,0.000384,7.4e-05],
+  [0.193718,0.504545,0.097045,0.033919,0.107714,0.037611,0.023118,8.5e-05,0.000816,0.001042,2.3e-05,0,0.000305,5.9e-05],
+  [0.160478,0.560576,0.105864,0.025741,0.090541,0.038212,0.01622,8.7e-05,0.000829,0.001058,2.4e-05,0,0.00031,6e-05],
+  [0.130212,0.55652,0.1123,0.043746,0.11865,0.023205,0.013047,8.5e-05,0.000812,0.001037,2.3e-05,0,0.000304,5.9e-05],
+  [0.166252,0.450575,0.095136,0.108263,0.120056,0.037854,0.014426,0.000273,0.002604,0.003324,7.5e-05,0,0.000974,0.000188],
+  [0.178834,0.498364,0.04462,0.06419,0.168142,0.026718,0.010905,0.000302,0.00288,0.003677,8.3e-05,0,0.001077,0.000208],
+  [0.178031,0.462253,0.046116,0.099032,0.157641,0.0243,0.023864,0.000199,0.001901,0.00576,5.5e-05,0,0.000711,0.000137]
+];
+const PHASE_LABEL = {
+  regular: "open play", assisted: "an assisted move", corner: "a corner",
+  fast_break: "a counter-attack", set_piece: "another set piece",
+  free_kick: "a direct free kick", throw_in_set_piece: "a throw-in"
+};
+
+function mixNodes(v, a){
+  if (v <= a[0]) return [0, 0, 1];
+  if (v >= a[a.length - 1]) return [a.length - 1, a.length - 1, 1];
+  let i = 0;
+  while (a[i + 1] < v) i++;
+  return [i, i + 1, (a[i + 1] - v) / (a[i + 1] - a[i])];
+}
+function mixWeights(dist, lat){
+  const nl = MIX_L.length;
+  const [i0, i1, wd] = mixNodes(dist, MIX_D);
+  const [j0, j1, wl] = mixNodes(lat, MIX_L);
+  const w = []; let t = 0;
+  for (let k = 0; k < MIX_KEYS.length; k++){
+    const v = wd * wl * MIX[i0 * nl + j0][k] + (1 - wd) * wl * MIX[i1 * nl + j0][k]
+            + wd * (1 - wl) * MIX[i0 * nl + j1][k] + (1 - wd) * (1 - wl) * MIX[i1 * nl + j1][k];
+    w.push(v); t += v;
+  }
+  return w.map(v => v / t);
+}
+function weightsAt(out, off){
+  const y = Math.abs(off);
+  return mixWeights(Math.max(Math.hypot(out, y), 0.3), y);
+}
+function headShareAt(out, off, situation){
+  const w = weightsAt(out, off);
+  let h = 0, t = 0;
+  for (let k = 0; k < MIX_KEYS.length; k++){
+    if (situation !== "any" && MIX_KEYS[k][1] !== situation) continue;
+    t += w[k];
+    if (MIX_KEYS[k][0] === "head") h += w[k];
+  }
+  return h / t;
+}
+function topPhaseAt(out, off, bodyPart){
+  const w = weightsAt(out, off), agg = {};
+  let t = 0;
+  for (let k = 0; k < MIX_KEYS.length; k++){
+    if (bodyPart !== "any" && MIX_KEYS[k][0] !== bodyPart) continue;
+    agg[MIX_KEYS[k][1]] = (agg[MIX_KEYS[k][1]] || 0) + w[k];
+    t += w[k];
+  }
+  let best = null;
+  for (const s in agg) if (best === null || agg[s] > agg[best]) best = s;
+  return [best, agg[best] / t];
+}
+
+// How far the training data actually reaches. Measured by
+// patch_calculator_range.py, not typed in by hand. Past these distances the
+// number on screen is the fitted curve continuing, with nothing behind it.
+const RANGE = {
+  head: { thin: 16.0, out: 24.0,
+    thinNote: "Only 36 headers in three seasons came from this far out, "
+      + "and 1 was scored. Treat this as indicative.",
+    outNote: "Only 1 header in three seasons came "
+      + "from beyond 24 metres. This figure is the formula extrapolating, not evidence." },
+  foot: { thin: 35.0, out: 45.0,
+    thinNote: "Only 70 shots in three seasons came from this band, so it is thinly supported.",
+    outNote: "Only 72 shots in three seasons came "
+      + "from beyond 45 metres. This figure is the formula extrapolating, not evidence." }
+};
+
+function rangeNote(dist, bodyPart){
+  // "any" is almost entirely foot shots this far out, so it uses that scale.
+  const r = bodyPart === "head" ? RANGE.head : RANGE.foot;
+  if (dist >= r.out) return ["out", r.outNote];
+  if (dist >= r.thin) return ["thin", r.thinNote];
+  return null;
+}
+
+const GOAL_WIDTH = 7.32, HALF_GOAL = GOAL_WIDTH / 2;
+
+function shotAngle(out, off){
+  const y = Math.abs(off);
+  return Math.atan2(GOAL_WIDTH * out, out * out + y * y - HALF_GOAL * HALF_GOAL);
+}
+function xgOne(out, off, head, situation){
+  const y = Math.abs(off);
+  let d = Math.hypot(out, y);
+  if (d < 0.3) d = 0.3;
+  const ld = Math.log(d), a = shotAngle(out, y);
+  const z = B.intercept + B.log_distance * ld + B.distance * d
+          + B.angle * a + B.angle_x_logdist * a * ld
+          + (head ? B.is_header : 0) + SITUATION[situation];
+  return z >= 0 ? 1 / (1 + Math.exp(-z)) : Math.exp(z) / (1 + Math.exp(z));
+}
+// With "any" the model is averaged over what is actually hit from this spot,
+// which answers what a shot from here is worth before you know how it was
+// struck or what created it.
+function xg(out, off, bodyPart, situation){
+  if (bodyPart !== "any" && situation !== "any"){
+    return xgOne(out, off, bodyPart === "head", situation);
+  }
+  const w = weightsAt(out, off);
+  let num = 0, den = 0;
+  for (let k = 0; k < MIX_KEYS.length; k++){
+    const bp = MIX_KEYS[k][0], sit = MIX_KEYS[k][1];
+    if (bodyPart !== "any" && bp !== bodyPart) continue;
+    if (situation !== "any" && sit !== situation) continue;
+    num += w[k] * xgOne(out, off, bp === "head", sit);
+    den += w[k];
+  }
+  return num / den;
+}
+
+const GOAL_LINE_Y = 2;             // the goal line sits at y=2 in the viewBox
+let state = { out: 11, off: 0, bodyPart: "foot", situation: "regular" };
+
+const svg = document.getElementById("pitch");
+const marker = document.getElementById("marker");
+const dot = document.getElementById("dot");
+const sightL = document.getElementById("sight-l");
+const sightR = document.getElementById("sight-r");
+
+function place(evt){
+  const pt = svg.createSVGPoint();
+  const src = evt.touches && evt.touches[0] ? evt.touches[0] : evt;
+  pt.x = src.clientX; pt.y = src.clientY;
+  const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+  state.off = Math.max(-33, Math.min(33, p.x));
+  state.out = Math.max(0, Math.min(41.5, p.y - GOAL_LINE_Y));
+  render();
+}
+svg.addEventListener("pointerdown", place);
+svg.addEventListener("keydown", e => {
+  const step = e.shiftKey ? 2 : 0.5;
+  const moves = { ArrowLeft:[-step,0], ArrowRight:[step,0], ArrowUp:[0,-step], ArrowDown:[0,step] };
+  if (!moves[e.key]) return;
+  e.preventDefault();
+  state.off = Math.max(-33, Math.min(33, state.off + moves[e.key][0]));
+  state.out = Math.max(0, Math.min(41.5, state.out + moves[e.key][1]));
+  render();
+});
+
+["foot", "head", "any"].forEach(v => {
+  document.getElementById("bp-" + v).addEventListener("click", () => setBody(v));
+});
+function setBody(v){
+  state.bodyPart = v;
+  ["foot", "head", "any"].forEach(k => {
+    document.getElementById("bp-" + k).setAttribute("aria-pressed", String(k === v));
+  });
+  render();
+}
+document.getElementById("situation").addEventListener("change", e => {
+  state.situation = e.target.value; render();
+});
+
+function oddsPhrase(p){
+  if (p >= 0.5) return "Scored more often than not";
+  const n = Math.round(1 / p);
+  return `Scored about <b>1 in ${n}</b> times`;
+}
+
+function render(){
+  const { out, off, bodyPart, situation } = state;
+  const p = xg(out, off, bodyPart, situation);
+
+  marker.style.display = "";
+  const cy = out + GOAL_LINE_Y;
+  dot.setAttribute("cx", off); dot.setAttribute("cy", cy);
+  sightL.setAttribute("x1", off); sightL.setAttribute("y1", cy);
+  sightR.setAttribute("x1", off); sightR.setAttribute("y1", cy);
+
+  document.getElementById("xg-value").textContent = p.toFixed(2);
+  document.getElementById("odds").innerHTML = oddsPhrase(p);
+  document.getElementById("f-dist").textContent  = Math.hypot(out, off).toFixed(1) + " m";
+  document.getElementById("f-out").textContent   = out.toFixed(1) + " m";
+  document.getElementById("f-off").textContent   = Math.abs(off).toFixed(1) + " m";
+  document.getElementById("f-angle").textContent = Math.round(shotAngle(out, off) * 180 / Math.PI) + "°";
+
+  const warn = document.getElementById("range-warn");
+  const note = rangeNote(Math.hypot(out, off), bodyPart);
+  warn.hidden = note === null;
+  if (note){
+    warn.innerHTML = (note[0] === "out" ? "<b>Outside the data.</b> " : "<b>Thin here.</b> ")
+      + note[1];
+  }
+
+  const cmp = document.getElementById("compare");
+  const pct = x => Math.round(x * 100) + "%";
+  if (bodyPart === "any"){
+    const foot = xg(out, off, "foot", situation);
+    const head = xg(out, off, "head", situation);
+    const share = headShareAt(out, off, situation);
+    cmp.innerHTML = `Around this spot <b>${pct(share)}</b> of shots are headed, so the figure above `
+      + `sits between a foot shot at ${foot.toFixed(2)} and a header at ${head.toFixed(2)}.`;
+  } else if (situation === "any"){
+    const top = topPhaseAt(out, off, bodyPart);
+    cmp.innerHTML = `Averaged over what creates shots from here. The most common is `
+      + `<b>${PHASE_LABEL[top[0]]}</b>, at ${pct(top[1])} of them.`;
+  } else if (bodyPart === "head"){
+    const other = xg(out, off, "foot", situation);
+    cmp.innerHTML = `The same chance struck with the <b>foot</b> is worth ${other.toFixed(2)}. `
+      + `Across the whole sample a foot shot has roughly twice the odds of a header from the same place.`;
+  } else {
+    const other = xg(out, off, "head", situation);
+    cmp.innerHTML = `Headed from the same spot it is worth <b>${other.toFixed(2)}</b>. `
+      + `Headers convert worse everywhere on the pitch, and only look comparable overall because they are taken much closer in.`;
+  }
+}
+render();
+</script>
+
+</body>
+</html>

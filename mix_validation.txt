@@ -1,0 +1,132 @@
+Validation of the "any" option in aleague_xg.py
+================================================================
+
+Training shots                        14,065
+Cells in the mix table                33
+Shots in cells below the 150-shot floor   43
+
+Mean value of a shot in each two-metre by three-metre area,
+averaged over the mix, against the mean fitted xG of the shots
+actually taken there. The areas are finer than the table's bands.
+
+    distance     lateral   shots   averaged   fitted       gap
+     2-4         0-3         151     60.13%   62.27%    -2.14pp
+     4-6         0-3         319     40.20%   39.77%    +0.42pp
+     4-6         3-6         187     28.37%   27.59%    +0.78pp
+     6-8         0-3         365     24.80%   24.57%    +0.24pp
+     6-8         3-6         273     19.39%   18.49%    +0.90pp
+     6-8         6-9         117     10.60%   10.20%    +0.41pp
+     8-10        0-3         652     18.11%   18.06%    +0.05pp
+     8-10        3-6         403     16.05%   15.40%    +0.66pp
+     8-10        6-9         228     10.13%    9.56%    +0.57pp
+    10-12        0-3         386     14.48%   13.77%    +0.71pp
+    10-12        3-6         391     13.82%   13.75%    +0.06pp
+    10-12        6-9         238     11.90%   11.44%    +0.46pp
+    10-12        9-12        160      6.50%    7.58%    -1.08pp
+    12-14        0-3         267     12.66%   12.46%    +0.19pp
+    12-14        3-6         322     12.53%   12.70%    -0.17pp
+    12-14        6-9         275     11.43%   11.73%    -0.31pp
+    12-14        9-12        301      8.31%    8.34%    -0.03pp
+    12-14       12-15         69      6.00%    6.05%    -0.05pp
+    14-16        0-3         356     11.07%   11.01%    +0.06pp
+    14-16        3-6         296     10.99%   10.92%    +0.07pp
+    14-16        6-9         271     10.26%   10.20%    +0.06pp
+    14-16        9-12        423      8.79%    8.98%    -0.20pp
+    14-16       12-15        229      6.74%    6.94%    -0.20pp
+    16-18        0-3         177      9.49%    9.42%    +0.07pp
+    16-18        3-6         165      9.45%    9.41%    +0.03pp
+    16-18        6-9         228      8.98%    8.87%    +0.11pp
+    16-18        9-12        343      7.95%    8.21%    -0.25pp
+    16-18       12-15        303      6.55%    6.60%    -0.05pp
+    16-18       15-18         40      4.95%    4.85%    +0.10pp
+    18-20        0-3         338      7.60%    7.76%    -0.16pp
+    18-20        3-6         125      7.49%    7.69%    -0.20pp
+    18-20        6-9          96      7.48%    7.57%    -0.09pp
+    18-20        9-12        267      6.89%    6.81%    +0.08pp
+    18-20       12-15        279      6.00%    6.09%    -0.09pp
+    18-20       15-18        103      4.96%    4.96%    -0.00pp
+    20-22        0-3         163      6.63%    6.31%    +0.33pp
+    20-22        3-6         125      6.35%    6.36%    -0.01pp
+    20-22        6-9         138      6.05%    5.95%    +0.10pp
+    20-22        9-12        137      5.75%    5.82%    -0.07pp
+    20-22       12-15        162      5.28%    5.22%    +0.06pp
+    20-22       15-18        123      4.60%    4.73%    -0.13pp
+    22-24        0-3         151      5.23%    5.21%    +0.01pp
+    22-24        3-6         151      5.16%    5.00%    +0.16pp
+    22-24        6-9         168      5.04%    5.09%    -0.05pp
+    22-24        9-12        176      4.84%    4.89%    -0.05pp
+    22-24       12-15        124      4.52%    4.46%    +0.06pp
+    22-24       15-18         65      4.13%    4.09%    +0.04pp
+    24-26        0-3         177      4.44%    4.39%    +0.05pp
+    24-26        3-6         132      4.40%    4.29%    +0.11pp
+    24-26        6-9         162      4.25%    4.18%    +0.06pp
+    24-26        9-12        176      4.16%    4.13%    +0.03pp
+    24-26       12-15        158      3.97%    4.00%    -0.03pp
+    24-26       15-18         48      3.67%    3.69%    -0.02pp
+    26-28        0-3         203      3.79%    3.81%    -0.02pp
+    26-28        3-6         139      3.75%    3.65%    +0.10pp
+    26-28        6-9         153      3.66%    3.65%    +0.00pp
+    26-28        9-12        175      3.57%    3.49%    +0.08pp
+    26-28       12-15        154      3.46%    3.31%    +0.16pp
+    26-28       15-18         66      3.28%    3.31%    -0.03pp
+    28-30        0-3         173      3.30%    3.35%    -0.06pp
+    28-30        3-6         119      3.27%    3.41%    -0.13pp
+    28-30        6-9         119      3.18%    3.19%    -0.01pp
+    28-30        9-12         90      3.14%    3.17%    -0.03pp
+    28-30       12-15        102      3.08%    3.10%    -0.03pp
+    28-30       15-18         59      2.93%    2.93%    -0.00pp
+    30-32        0-3          78      2.86%    2.91%    -0.05pp
+    30-32        3-6          56      2.87%    2.81%    +0.06pp
+    30-32        6-9          58      2.80%    2.83%    -0.03pp
+    30-32        9-12         58      2.75%    2.93%    -0.18pp
+    30-32       12-15         53      2.68%    2.64%    +0.04pp
+
+Worst area gap                        2.136 percentage points
+Root mean square gap                  0.381 percentage points
+League total, averaged over the mix   1470.0
+League total, using each shot's own   1463.0
+Difference                            +0.48%
+
+Smoothness, walking down the centre line from 2 to 36 metres in
+100 millimetre steps:
+  steps where the value rises as you move away  0
+  largest change in one step                    1.057 pp
+
+The small positive difference in the league total is expected.
+Within a cell, headers sit closer to goal than foot shots, so a
+single mix for the whole cell slightly understates how often a
+close-range shot is a header.
+
+
+Calibration against actual goals, shots sorted by location value
+
+ bin  shots  averaged    model  goals  averaged z  model z
+   1   1406      38.0     38.6     43       +0.81    +0.71
+   2   1407      52.7     52.4     50       -0.38    -0.33
+   3   1406      66.0     65.8     54       -1.47    -1.45
+   4   1407      82.8     84.4     63       -2.17    -2.33
+   5   1406     100.9    103.1     90       -1.08    -1.29
+   6   1407     121.9    123.4    150       +2.54    +2.40
+   7   1406     149.0    147.5    177       +2.29    +2.43
+   8   1407     178.6    175.2    169       -0.72    -0.47
+   9   1406     224.2    220.6    202       -1.48    -1.25
+  10   1407     455.9    452.0    465       +0.42    +0.61
+
+Hosmer-Lemeshow on these groups, averaged value   25.81
+Hosmer-Lemeshow on these groups, model            25.97
+
+The two are the same to within rounding, and the gaps appear in the
+same groups. Averaging over the mix inherits the model's spatial
+error and adds none of its own. The model under-rates the sixth and
+seventh deciles and over-rates the fourth, which is a limit of five
+features on three seasons, not of the averaging.
+
+With the phase of play known and only the body part averaged
+
+  regular              shots  2066  expected   239.3  actual  239  z = -0.02
+  assisted             shots  7379  expected   761.4  actual  759  z = -0.09
+  corner               shots  2198  expected   185.2  actual  186  z = +0.06
+  fast_break           shots  1021  expected   166.3  actual  166  z = -0.02
+  free_kick            shots   411  expected    22.0  actual   22  z = -0.00
+  set_piece            shots   708  expected    71.2  actual   71  z = -0.02
+  throw_in_set_piece   shots   282  expected    20.1  actual   20  z = -0.02
