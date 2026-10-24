@@ -201,7 +201,8 @@ fitted once rather than twice.
 | Total post-shot xG against actual goals | 1462.5 against 1463 |
 
 It beat an earlier single-stage version on cross-validated log loss at all five
-seeds tested, with each season held out in turn, and on calibration. Totals by
+seeds tested, on held-out log loss with each season held out in turn, and on
+calibration. Totals by
 phase of play are calibrated to within a tenth of a goal, corners included
 (186.0 against 186). It still mis-orders some middling chances, which would
 need the goalkeeper's position to fix.
@@ -221,7 +222,9 @@ patch_calculator.py           adds the "any" controls to the calculator page
 patch_calculator_range.py     adds the out-of-range warning, counts measured from the data
 ```
 
-Run them in that order. They need `numpy` and nothing else.
+Run them in that order. They need `numpy` and nothing else. The post-shot model
+and the per-season refits were fitted with separate scripts that are not in
+this release yet. Their coefficients and reports are.
 
 **The training data is not in this repository.** It was collected from
 Sofascore's public match feed and redistributing it is not mine to do, so the
@@ -247,7 +250,7 @@ model_summary.txt                      coefficients, fit, validation, methods le
 mix_validation.txt                     full validation of the "any" option
 psxg_model_coefficients.json           the post-shot model's coefficients
 psxg_model_summary.txt                 the post-shot model's full report
-make_*.py, patch_*.py                  the scripts that produced the xG-lite files
+make_*.py, patch_*.py                  the scripts that produced the pooled xG-lite files
 VALIDATION.md                          the written validation report
 ```
 
