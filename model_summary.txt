@@ -26,6 +26,44 @@ Fit
   Brier, cross-validated    0.08165
   total xG 1463.1 against 1463 actual goals
 
+Validation
+  External. Against Sofascore's own published match xG across 652
+  team-matches, r = .859, mean difference -0.022 xG per team-match,
+  median absolute difference 0.240. The slope against their figure
+  is 0.933, so this model compresses the extremes slightly.
+  Within-situation. Calibrated in every situation. Corners across
+  three seasons, 186.0 predicted against 186 actual, z = -0.00.
+  Out of time. Trained on 2023/24 and 2024/25 and tested on
+  2025/26, log loss 0.28471, AUC .7359, total xG 7.5 per cent above
+  actual goals. That lean traces to a league-wide scoring dip,
+  10.16, 11.22 and 9.77 per cent of shots scored by season, not to
+  any one situation. A single-season fit on 2025/26 is unbiased, so
+  for season-specific work use the per-season coefficients in
+  xg_model_coefficients_by_season.json.
+
+Methods tested and rejected
+  Shooter skill, leave-one-out and shrunk towards the league mean.
+  491 shooters with a median of 16 shots each, and held-out log
+  loss was worse at every shrinkage level tried.
+  Splines on distance, and further interactions among distance,
+  angle and body part. Better in sample, worse held out.
+  A season dummy. It cannot be estimated for a season outside the
+  training sample and collapsed held-out discrimination to chance,
+  AUC .483.
+  Score state at the moment of the shot. The only candidate that
+  improved cross-validated log loss, by .00018, which does not
+  justify the term or the extra pipeline step.
+  Ridge penalisation, a lambda grid with nested cross-validation.
+  Best at lambda 30, gaining .00012 in cross-validated log loss
+  while held-out AUC fell from .7359 to .7351. Left unpenalised.
+
+What the model cannot see. The feed carries no defender,
+goalkeeper or pressure information, which is the main gap between
+this model and the commercial ones. Note also that penalties are
+excluded here, so these figures are not directly comparable with
+published models that include them. Penalties are easy to predict
+and inflate both log loss reduction and AUC.
+
 Calibration, cross-validated predictions in deciles
  bin      n   mean xG   actual   xG sum  goals
 ----------------------------------------------

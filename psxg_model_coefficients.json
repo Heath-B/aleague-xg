@@ -1,0 +1,94 @@
+{
+  "architecture": "two-stage, Opta xGOT design",
+  "stage_one": {
+    "model": "xg-lite",
+    "terms": [
+      "intercept",
+      "log_distance",
+      "distance",
+      "angle",
+      "angle_x_logdist",
+      "is_header",
+      "sit_assisted",
+      "sit_corner",
+      "sit_fast-break",
+      "sit_free-kick",
+      "sit_set-piece",
+      "sit_throw-in-set-piece"
+    ],
+    "coef": [
+      -2.7357013388233122,
+      0.0723869409253157,
+      -0.0631107186266718,
+      1.7218888931347558,
+      0.5208011785005073,
+      -0.8877564681598955,
+      0.055183855484929774,
+      -0.7417340238560289,
+      0.603075580565955,
+      0.5116518081042148,
+      -0.3317449726966468,
+      -0.6904611161615433
+    ],
+    "note": "enters stage two as pre_shot_logit, the linear predictor"
+  },
+  "terms": [
+    "intercept",
+    "pre_shot_logit",
+    "placement_lateral",
+    "placement_height",
+    "angle_x_lateral",
+    "is_header",
+    "header_x_height",
+    "sit_assisted",
+    "sit_corner",
+    "sit_fast-break",
+    "sit_free-kick",
+    "sit_set-piece",
+    "sit_throw-in-set-piece"
+  ],
+  "coef": [
+    0.012597394640299915,
+    1.2140179558648776,
+    0.9381543950652123,
+    0.34112855938420633,
+    -0.2637757229568108,
+    0.5635624891693163,
+    -0.5193666338701834,
+    -0.07854259704999834,
+    0.5260890360936642,
+    -0.35901589550111446,
+    -0.3358951578137274,
+    0.21756836065081253,
+    0.3222280418482139
+  ],
+  "se": [
+    0.17164883048268548,
+    0.07327226285372675,
+    0.07949433761624386,
+    0.06981721724869465,
+    0.12782012518889224,
+    0.23377885681464752,
+    0.1838695969055921,
+    0.10803239477272256,
+    0.15929616737324917,
+    0.15005947612277906,
+    0.269322820004332,
+    0.204230595568587,
+    0.34111133557969053
+  ],
+  "situations": [
+    "assisted",
+    "corner",
+    "fast-break",
+    "free-kick",
+    "set-piece",
+    "throw-in-set-piece"
+  ],
+  "scaling": {
+    "gm_y_post_units": 4.8,
+    "gm_z_bar_units": 38.0,
+    "goal_half_width_m": 3.66,
+    "goal_height_m": 2.44
+  }
+}

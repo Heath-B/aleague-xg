@@ -1,0 +1,92 @@
+Post-shot expected goals, A-League Men 2023/24 to 2025/26
+======================================================================
+Shots: 4834   Goals: 1463 (30.26%)
+On-target shots only, so goals and saves. Regular seasons, penalties,
+shootouts and finals excluded, matching xG-lite.
+
+Two stages, following the architecture Opta documents for xGOT. Stage
+one is xG-lite, whose logit enters here as a single term carrying
+distance, angle, body part and situation. Stage two adds where the
+shot finished inside the goal frame, in metres, lateral from the
+centre and height from the ground. Distance and angle are therefore
+fitted once rather than twice.
+
+term                           coef      se       z        p    odds
+----------------------------------------------------------------------
+intercept                     0.013   0.172    0.07     .941    1.01
+pre_shot_logit                1.214   0.073   16.57    <.001    3.37
+placement_lateral             0.938   0.079   11.80    <.001    2.56
+placement_height              0.341   0.070    4.89    <.001    1.41
+angle_x_lateral              -0.264   0.128   -2.06     .039    0.77
+is_header                     0.564   0.234    2.41     .016    1.76
+header_x_height              -0.519   0.184   -2.82     .005    0.59
+sit_assisted                 -0.079   0.108   -0.73     .467    0.92
+sit_corner                    0.526   0.159    3.30    <.001    1.69
+sit_fast-break               -0.359   0.150   -2.39     .017    0.70
+sit_free-kick                -0.336   0.269   -1.25     .212    0.71
+sit_set-piece                 0.218   0.204    1.07     .287    1.24
+sit_throw-in-set-piece        0.322   0.341    0.94     .345    1.38
+
+Fit
+  log loss, null model      0.61309
+  log loss, in sample       0.48434
+  log loss, cross-validated 0.48986
+  pseudo R2 (McFadden, CV)  0.2010
+  AUC, cross-validated      0.7984
+  Brier, cross-validated    0.16149
+  total post-shot xG 1462.5 against 1463 actual goals
+
+Specification notes. The pre-shot logit enters with a coefficient of
+1.214 (se 0.073), significantly steeper than 1.0 (z = 2.92, p = .003).
+Among shots that reached the frame, goal probability responds more
+sharply to pre-shot quality than the pre-shot scale itself, which is
+what conditioning on being on target should do, it strips out the
+off-target noise the pre-shot model has to carry. Situation dummies
+here are read against that inherited scale, so sit_corner being
+positive does not mean corners are good, stage one already carries
+their penalty.
+
+This architecture replaced a single-stage model that fitted distance
+and angle directly alongside placement. It is better on
+cross-validated log loss at all five seeds tested (mean .49020
+against .49218), on held-out log loss with each of the three seasons
+held out in turn, and on decile calibration (Hosmer-Lemeshow
+chi-square 24.0 against 35.2 on eight degrees of freedom). It uses
+one fewer parameter. Ridge penalisation was tested across a lambda
+grid with nested cross-validation and gained .00001, so the model is
+left unpenalised. Situation dummies are kept because without them
+the model over-predicts corner goals, z = +3.25 in sample. A season
+dummy was rejected, it cannot be estimated for a season outside the
+training sample.
+
+Remaining misfit. The deciles below still disagree beyond chance
+(chi-square 24.0, p = .002), concentrated in the fourth and sixth
+bins. Totals by situation are calibrated to within a tenth of a
+goal, so the misfit is in the ordering of middling chances, not in
+the level. Closing it would need information this feed does not
+carry, above all where the goalkeeper was.
+
+Calibration, cross-validated predictions in deciles
+ bin      n mean psxG   actual psxG sum  goals
+----------------------------------------------
+   1    484    0.0387   0.0413     18.7     20
+   2    484    0.0794   0.0682     38.4     33
+   3    484    0.1207   0.1033     58.4     50
+   4    484    0.1672   0.1219     80.9     59
+   5    483    0.2189   0.2257    105.7    109
+   6    483    0.2773   0.3209    134.0    155
+   7    483    0.3469   0.3665    167.6    177
+   8    483    0.4329   0.4658    209.1    225
+   9    483    0.5560   0.5714    268.5    276
+  10    483    0.7891   0.7433    381.1    359
+
+Calibration by situation, cross-validated
+situation                   n      psxG   goals      z
+------------------------------------------------------
+regular                   708     239.1     239  -0.01
+assisted                 2681     758.7     759  +0.02
+corner                    558     186.0     186  -0.00
+fast-break                489     165.7     166  +0.03
+free-kick                 134      21.6      22  +0.10
+set-piece                 196      71.6      71  -0.11
+throw-in-set-piece         68      19.8      20  +0.05

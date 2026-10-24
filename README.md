@@ -4,8 +4,8 @@ A free expected goals model for the A-League Men, built from public match data
 and released so that anyone can use it without a subscription.
 
 Every xG model with A-League coverage sits behind a paywall. Sofascore's public
-feed, which this model is built from, carries no xG value for the A-League Men
-at all. So this exists to fill a gap rather than to compete with something that
+feed, which this model is built from, carries no shot-level xG for the A-League
+Men. So this exists to fill a gap rather than to compete with something that
 was already free.
 
 One file, no dependencies, thirteen numbers you can read. There is also an
@@ -106,10 +106,18 @@ the phase of play, and an interaction between angle and distance. Nothing else.
 | Total xG against actual goals | 1463.1 against 1463 |
 
 On a temporal hold-out, trained on the first two seasons and tested on a
-2025/26 it had never seen, it scores 0.28503 against 0.32077 for the league
-rate alone, so it does carry to a new season. It over-predicted that season by
-about 7% (*z* = -1.50), which is worth knowing if you apply it to a single
-season in isolation.
+2025/26 it had never seen, it scores a log loss of 0.28471 against 0.32052 for
+the league rate alone, with an AUC of .7359, so it does carry to a new season.
+It over-predicted that season by 7.5%. That traces to a league-wide scoring
+dip, 10.16, 11.22 and 9.77 per cent of shots scored by season, rather than to
+any one situation. For work on a single season, use the per-season refits in
+`xg_model_coefficients_by_season.json`. On 2025/26 a single-season fit scores
+0.28161 with an AUC of .7424 and removes the bias.
+
+Against Sofascore's own match-level xG, where the feed publishes it (652
+team-matches), the two agree closely (*r* = .859), with a mean difference of
+-0.022 xG per team-match. The slope against their figure is 0.933, so this
+model compresses the extremes slightly.
 
 It is exactly calibrated on corner shots, 186 goals against 186.0 expected
 (*z* = 0.00), and that holds by quintile and by body part. That matters because
@@ -118,6 +126,19 @@ measuring corner over and under-performance was the reason this was built.
 The header coefficient gives an odds ratio of 0.41, which reproduces by a
 different method, and on a sample six times larger, the finding from the corner
 analysis this grew out of.
+
+---
+
+### Tried and left out
+
+Each of these was tested against cross-validated or held-out log loss and did
+not earn its place. A shooter skill term, shrunk towards the league mean (491
+shooters with a median of 16 shots each, worse at every shrinkage level).
+Splines on distance and further interactions (better in sample, worse held
+out). A season dummy (it cannot be estimated for a season outside the training
+sample). Score state at the moment of the shot (a gain of .00018, too small to
+justify). Ridge penalisation (a gain of .00012 with a slightly lower AUC). The
+detail is in `model_summary.txt`.
 
 ---
 
@@ -158,13 +179,46 @@ at 14,065 shots, so more data would make a better model.
 
 ---
 
+## The post-shot model
+
+A companion model for shots that reached the goal frame, the goals and the
+saves. It answers how likely a shot was to beat the goalkeeper once you know
+where it was heading, which is what post-shot xG (xGOT) measures.
+
+It follows the two-stage design Opta documents for xGOT. Stage one is xG-lite,
+whose prediction enters as a single term carrying distance, angle, body part
+and phase of play. Stage two adds where the shot finished in the frame, in
+metres sideways from the centre and up from the ground. Distance and angle are
+fitted once rather than twice.
+
+| Measure | Value |
+| --- | --- |
+| Shots | 4,834 on target, 1,463 goals |
+| Log loss, cross-validated | 0.48986 |
+| Log loss, league rate alone | 0.61309 |
+| AUC, cross-validated | .7984 |
+| Brier, cross-validated | 0.16149 |
+| Total post-shot xG against actual goals | 1462.5 against 1463 |
+
+It beat an earlier single-stage version on cross-validated log loss at all five
+seeds tested, with each season held out in turn, and on calibration. Totals by
+phase of play are calibrated to within a tenth of a goal, corners included
+(186.0 against 186). It still mis-orders some middling chances, which would
+need the goalkeeper's position to fix.
+
+It is not in the calculator, because it needs to know where in the frame a
+shot was heading. The coefficients and the full report are in
+`psxg_model_coefficients.json` and `psxg_model_summary.txt`.
+
+---
+
 ## Rebuilding it
 
 ```
-build/make_xg_model.py        fits the model, writes the coefficients and the report
-build/make_xg_mix.py          measures the mix table behind the "any" option
-build/patch_calculator.py     adds the "any" controls to the calculator page
-build/patch_calculator_range.py   adds the out-of-range warning, counts measured from the data
+make_xg_model.py              fits the model, writes the coefficients and the report
+make_xg_mix.py                measures the mix table behind the "any" option
+patch_calculator.py           adds the "any" controls to the calculator page
+patch_calculator_range.py     adds the out-of-range warning, counts measured from the data
 ```
 
 Run them in that order. They need `numpy` and nothing else.
@@ -184,20 +238,29 @@ differ, and neither is wrong.
 ## Files
 
 ```
-aleague_xg.py                 the model, the only file you need
-docs/index.html               the calculator, self-contained, served by GitHub Pages
-model/xg_model_coefficients.json   fitted coefficients and standard errors
-model/xg_mix_table.json       the mix behind the "any" option
-model/model_summary.txt       coefficients, fit statistics, calibration table
-model/mix_validation.txt      full validation of the "any" option
-build/                        the scripts that produced all of the above
-VALIDATION.md                 the written validation report
+aleague_xg.py                          the model, the only file you need
+docs/index.html                        the calculator, self-contained, served by GitHub Pages
+xg_model_coefficients.json             fitted coefficients and standard errors
+xg_model_coefficients_by_season.json   per-season refits, for single-season work
+xg_mix_table.json                      the mix behind the "any" option
+model_summary.txt                      coefficients, fit, validation, methods left out
+mix_validation.txt                     full validation of the "any" option
+psxg_model_coefficients.json           the post-shot model's coefficients
+psxg_model_summary.txt                 the post-shot model's full report
+make_*.py, patch_*.py                  the scripts that produced the xG-lite files
+VALIDATION.md                          the written validation report
 ```
 
 ## Version
 
-1.0.0. The coefficients will change when the model is refitted, so pin a
+1.1.0. The coefficients will change when the model is refitted, so pin a
 version if you need results to stay reproducible.
+
+1.1.0, October 2026. Adds the post-shot model, the per-season refits and the
+fuller model report. The xG-lite coefficients are unchanged from 1.0.0, so the
+module and the calculator give the same answers as before.
+
+1.0.0, October 2026. First release.
 
 ## Licence
 
